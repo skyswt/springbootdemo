@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>SpringBoot-Demo</title>
+    <link rel="stylesheet" type="text/css" href="ext/easyui/themes/gray/easyui.css">
+    <link rel="stylesheet" type="text/css" href="ext/easyui/themes/icon.css">
+    <link rel="stylesheet" type="text/css" href="ext/easyui/themes/color.css">
+    <script type="text/javascript" src="ext/easyui/jquery.min.js"></script>
+    <script type="text/javascript" src="ext/easyui/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="ext/easyui/plugins/jquery.edatagrid.js"></script>
+    <script type="text/javascript" src="ext/easyui/plugins/jquery.draggable.js"></script>
+    <script type="text/javascript" src="ext/easyui/locale/easyui-lang-zh_CN.js"></script>
+    <script type="text/javascript" src="ext/utils/helper.js"></script>
+</head>
+<body>
+<div id="controlBox">
+    <span>用户姓名:</span>
+    <input id="userSearch" class="easyui-textbox" panelHeight="auto"
+           data-options="editable:true,
+                          valueField:'code',
+                          textField:'caption'">
+    <a href="#" class="easyui-linkbutton c1" iconCls="icon-search" onclick="doSearch()">查询</a>
+    <a href="#" class="easyui-linkbutton c2" iconCls="icon-add" onclick="showDialog()">添加</a>
+    <a href="#" class="easyui-linkbutton c4" iconCls="icon-edit" onclick="loadForm()">编辑</a>
+    <a href="#" class="easyui-linkbutton c5" iconCls="icon-cancel" onclick="javascript:grid.edatagrid('destroyRow')">删除</a>
+    <a href="#" class="easyui-linkbutton c3" iconCls="icon-remove" onclick="javascript:grid.edatagrid('cancelRow')">取消</a>
+</div>
+<table id="grid"></table>
+<div id="formUserContainer" class="easyui-dialog" style="width:300px;height:200px;" closed="true" buttons="#formUserButtons">
+    <form id="formUser" method="POST" novalidate autocomplete="off">
+        <table class='tbledit' style="border-spacing: 20px;">
+            <tr>
+                <td>姓名:</td>
+                <td><input name="name" required="true" class="easyui-validatebox w10" value=""></td>
+            </tr>
+            <tr>
+                <td>年龄:</td>
+                <td><input name="age" required="true" type="number" class="easyui-validatebox w10" value=""></td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="formUserButtons">
+    <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-ok" onclick="saveForm()">保存</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#formUserContainer').dialog('close')">取消</a>
+</div>
+
+<script type="text/javascript">
+    var params = {
+        id: '',
+        mode: 'insert'
+    };
+    var userList;
+    //获取用户列表
+    getRemoteData('../demo/user/list',getList, false);
+
+    function getList(data) {
+        userList=data;
+    }
+
+    var grid;
+    $(function() {
+        grid = $('#grid').edatagrid({
+            title: '用户列表',
+            method:'post',
+            url: '../demo/user/list',
+            saveUrl: '../demo/user/save',
+            updateUrl: '../demo/user/save',
+            destroyUrl: '../demo/user/delete',
+            border : false,
+            rownumbers : true,
+            remoteSort : true,
+            nowrap : false,
+            singleSelect : true,
+            fitColumns : true,
+            pagination : true,
+            striped : true,
+            idField : "id",
+            columns : [[{
+                field : 'name',
+                title : '姓名',
+                width : 50,
+                align : 'center',
+                sortable : true
+            }, {
+                field : 'age',
+                title : '年龄',
+                width : 100,
+                align : 'center',
+                sortable : true
+            }]],
+            destroyMsg:{
+                norecord:{
+                    title:'警告',
+                    msg:'首先需要选中记录，然后在点击删除按钮'
+                },
+                confirm:{
+                    title:'确认',
+                    msg:'是否删除选中记录?'
+                }
+            },
+            onDestroy:function(index,row){
+                $.messager.show({
+                    title: "消息",
+                    msg: row.msg
+                });
+            }
+        });
+        grid.datagrid("getPager").pagination({
+            pageSize: 5,
+            pageList: [5, 10, 15, 20]
+        })
+    })
+
+    // 根据姓名搜索
+    function doSearch(){
+        grid.datagrid("load",{
+            name: $("#userSearch").val()
+        });
+    }
+
+    // 显示添加/编辑对话框
+    function showDialog() {
+        $("input[name='name']").val("");
+        $("input[name='age']").val("");
+        $('#formUserContainer').dialog('open').dialog('setTitle', '添加数据');
+    }
+    function loadForm() {
+        var row = grid.datagrid('getSelected');
+        if (row) {
+            params.id = row.id;
+            params.mode = 'edit';
+            $('#formUserContainer').dialog('open').dialog('setTitle', '编辑数据');
+            $('#formUser').form('load', row);
+        } else {
+            alert("请先选择一行数据，然后再尝试点击操作按钮！");
+        }
+    }
+
+    //保存添加的用户
+    function saveForm() {
+        $('#formUser').form('submit', {
+            url: '../demo/user/save',
+            onSubmit: function (param) {
+                param.id = params.id;
+                param.mode = params.mode;
+                return $(this).form('validate');
+            },
+            success: function (result) {
+                var result = eval('(' + result + ')');
+                if (result.code == 0) {
+                    $('#formUserContainer').dialog('close');
+                    grid.datagrid('reload');
+                }
+                $.messager.show({
+                    title: "消息",
+                    msg: result.msg
+                });
+            }
+        });
+    }
+</script>
+</body>
+</html>
