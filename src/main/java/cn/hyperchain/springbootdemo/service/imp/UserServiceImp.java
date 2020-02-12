@@ -28,30 +28,30 @@ public class UserServiceImp implements UserService {
 
     @Override
     public Message save(User seed) {
-        Message messag = new Message();
+        Message message = new Message();
         try {
             userDao.save(seed);
-            messag.setCode(0);
-            messag.setMsg("保存成功");
+            message.setCode(0);
+            message.setMsg("保存成功");
         } catch (Exception e) {
-            messag.setCode(-10);
-            messag.setMsg("保存失败");
+            message.setCode(-10);
+            message.setMsg("保存失败");
         }
-        return messag;
+        return message;
     }
 
     @Override
     public Message delete(User seed) {
-        Message messag = new Message();
+        Message message = new Message();
         try {
             userDao.delete(seed);
-            messag.setCode(0);
-            messag.setMsg("删除成功");
+            message.setCode(0);
+            message.setMsg("删除成功");
         } catch (Exception e) {
-            messag.setCode(-10);
-            messag.setMsg("删除失败");
+            message.setCode(-10);
+            message.setMsg("删除失败");
         }
-        return messag;
+        return message;
 
     }
 }
